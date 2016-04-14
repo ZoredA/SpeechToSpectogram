@@ -1,0 +1,4 @@
+# Icons used:
+# https://design.google.com/icons/#ic_mic
+# https://design.google.com/icons/#ic_close
+# https://design.google.com/icons/#ic_playlist_play
