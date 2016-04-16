@@ -5,22 +5,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
-
-#window segment length
-# NFFT = 256
+import math
 
 #Reference: http://stackoverflow.com/a/1303325
 #Reference: http://matplotlib.org/examples/pylab_examples/specgram_demo.html
 #Reference: http://stackoverflow.com/a/18625294
 #Reference: http://stackoverflow.com/questions/35932145/plotting-with-matplotlib-specgram
 
-
 #frequency limit: http://stackoverflow.com/a/19470773
-#minFreq = 0
-#maxFreq = 5000
 
 #samplingFreq is of the form ___/sec (e.g. 44000 bits/sec)
 #the inverse of samplingFreq will be used on the x-axis.
+
+NUMBER_OF_GRID_PLOTS = 9
 
 class Specto():
     text = None
@@ -28,7 +25,12 @@ class Specto():
     #plt = None
     plt.ion()
 
+    def __init__(self):
+        #plt.close("all")
+        pass
+
     def add_text(self, new_text):
+        plt.figure("Specto Figure")
         if self.text_ax is None:
             ax2 = plt.subplot2grid((3, 2), (2, 0), colspan=2)
             ax2.get_xaxis().set_visible(False)
@@ -46,49 +48,123 @@ class Specto():
         plt.draw()
 
     def create_specto(self, data, args):
-        # samplingPeriod = int(1.0/samplingFreq)
-
-        #plt.subplot(212, sharex=ax1)
-        # Pxx, freqs, bins, im = plt.specgram(data, NFFT=NFFT, Fs=samplingFreq, noverlap=900,
-                                        #    cmap=plt.cm.gist_heat)
-        # Pxx, freqs, bins, im = band_limited_specgram(data, NFFT=NFFT, Fs=samplingFreq, noverlap=128,
-        #                                              cmap=plt.cm.gist_heat, minfreq=40, maxfreq=4400)
-
-        #args['cmap'] = plt.cm.gist_heat
 
         # Time signal generation taken from http://stackoverflow.com/a/18625294
         frame_rate = args['Fs']
         t = np.linspace(0, len(data)/frame_rate, num=len(data))
 
-        # newData = list(data)
+        x = plt.figure("Specto Figure", figsize=(10, 10))
+
         ax0 = plt.subplot2grid((3, 2), (0, 0), colspan=2)
         ax0.plot(t, data)
         ax0.set_title('Time Domain')
+        ax0.set_xlabel('Time (seconds)')
+        ax0.set_ylabel('Amplitude')
         # number of rows, number of columns, plot number
         # http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.subplot
         #ax1 = plt.subplot(2,1,2)
         ax1 = plt.subplot2grid((3,2), (1,0), colspan=2)
         Pxx, freqs, bins, im = band_limited_specgram(data, **args)
         ax1.set_title("Spectogram.")
-
-        # ax0 = plt.subplot(2, 1, 1)
-        # #y = np.linspace(0, 100, num=50)
-        # # ax0.get_yaxis().set_visible(False)
-        # plt.plot([1], [98.104])
-        # plt.ylim([0, 100])
-        #
-        # # ax1.text(0.25, 0.25, 'sample',         horizontalalignment='left',
-        # #     verticalalignment='bottom',
-        # #     transform=ax1.transAxes)
-        # plt.show()
-
-        tenp = "this is a test how are you"
+        ax1.set_xlabel('Time (seconds)')
+        ax1.set_ylabel('Frequency (hz)')
 
         # print(get_avg_energy(Pxx))
         #print(get_average_amp_in_chunk(bins, data))
         #plt.show()
-        plt.subplots_adjust(left=0.11, bottom=0.07, right=0.9, top=0.87, wspace=0.20, hspace=0.31)
+        plt.subplots_adjust(left=0.11, bottom=0.07, right=0.9, top=0.95, wspace=0.20, hspace=0.69)
         return plt
+
+    def create_freq_grid(self, signal, fs):
+        max_time = len(signal)/fs
+        fig = plt.figure("freq_grid", figsize=(12, 12))
+        # We take our original time signal and split it into chunks
+        time_increments = max_time/NUMBER_OF_GRID_PLOTS
+
+        # size_of_each_plot = math.ceil(len(signal)/NUMBER_OF_GRID_PLOTS)
+        chunked = np.array_split(signal, NUMBER_OF_GRID_PLOTS)
+        cur_row = 0
+        cur_column = 0
+        current_time = 0.0
+        for index, data in enumerate(chunked):
+            freq, y = self.get_freq_amp(data, fs)
+            ax1 = plt.subplot2grid((3, 3), (cur_row, cur_column))
+            ax1.plot(freq, y, 'r')  # plotting the spectrum
+            if index < NUMBER_OF_GRID_PLOTS-1:
+                ax1.set_title('%4.2f to %4.2f s' % (current_time, current_time+time_increments))
+            else:
+                ax1.set_title('%4.2f to %4.2f s' % (current_time, max_time))
+            current_time += time_increments
+            ax1.set_xlabel('Freq (Hz)')
+            ax1.set_ylabel('dB (10 Log)')
+            cur_column += 1
+            if cur_column > 2:
+                cur_column = 0
+                cur_row += 1
+        plt.subplots_adjust(left=0.12, bottom=0.10, right=0.9, top=0.94, wspace=0.22, hspace=0.31)
+        plt.show()
+
+    # Some inspiration from http://glowingpython.blogspot.ca/2011/08/how-to-plot-frequency-spectrum-with.html
+    # and http://stackoverflow.com/questions/15382076/plotting-power-spectrum-in-python
+    def get_freq_amp(self, signal, fs):
+        """Returns the fourier transform of the signal along with the frequencies
+            Returns tuple :(freq, 10log fft)
+                -freq: list of frequencies (x-axis)
+                -10 log fft (y-axis)
+        """
+        #Y = np.abs(np.fft.fft(signal)) ** 2
+        Y = np.multiply(10, np.log10(np.fft.fft(signal)))
+        n = len(signal)
+        freq = np.fft.fftfreq(n, d=1/fs)
+
+        cut_list = []
+        idx = np.argsort(freq)
+
+        zero = np.float64(0)
+        max_freq = np.float64(4000.0)
+        for index in idx:
+            if 0 <= freq[index] <= max_freq:
+                cut_list.append(index)
+
+        return freq[cut_list], Y[cut_list]
+
+    def create_time_grid(self, signal, fs):
+        max_time = len(signal) / fs
+        total_time = np.linspace(0, len(signal) / fs, num=len(signal))
+        fig = plt.figure("time_grid", figsize=(12, 12))
+        size_of_each_plot = math.ceil((len(signal) / fs) / NUMBER_OF_GRID_PLOTS)
+        #chunked = chunks(signal, size_of_each_plot)
+        chunked = np.array_split(signal, NUMBER_OF_GRID_PLOTS)
+        chunked_t = np.array_split(total_time, NUMBER_OF_GRID_PLOTS)
+
+        time_increments = max_time / NUMBER_OF_GRID_PLOTS
+        cur_row = 0
+        cur_column = 0
+        current_time = 0.0
+
+        for index, data in enumerate(chunked):
+            t = chunked_t[index]
+            ax1 = plt.subplot2grid((3, 3), (cur_row, cur_column))
+            ax1.plot(t, data, 'r')  # plotting the spectrum
+            if index < NUMBER_OF_GRID_PLOTS - 1:
+                ax1.set_title('%4.2f to %4.2f s' % (current_time, current_time + time_increments))
+            else:
+                ax1.set_title('%4.2f to %4.2f s' % (current_time, max_time))
+            current_time += time_increments
+            ax1.set_xlabel('Time (s)')
+            ax1.set_ylabel('Amplitude')
+            cur_column += 1
+            if cur_column > 2:
+                cur_column = 0
+                cur_row += 1
+
+        plt.subplots_adjust(left=0.12, bottom=0.10, right=0.9, top=0.94, wspace=0.22, hspace=0.31)
+        plt.show()
+
+    def get_time_amp(self, signal, fs):
+        """This returns a tuple with (t, amp)"""
+
+        return ()
 
 # plt is a plot object. title is title.
 # scores are the y values, e.g. [95]
@@ -237,6 +313,8 @@ def band_limited_specgram(x, NFFT=256, Fs=2, Fc=0, detrend=mlab.detrend_none,
 
     return Pxx, freqs, bins, im
 
+
+
 # Have colormaps separated into categories:
 # Taken from http://matplotlib.org/examples/color/colormaps_reference.html
 
@@ -273,20 +351,3 @@ def get_cm_color_enum(map_string):
     color = map_string.split(' ')[1]
     return plt.get_cmap(color)
 
-
-if __name__ == "__main__":
-    import wave
-    import numpy as np
-    CHUNK = 1024
-    CHANNELS = 1
-    RATE = 44100
-    RECORD_SECONDS = 5
-    with wave.open('tmp/output.wav', 'rb') as spf:
-        # createSpecto(f.readframes(int(RATE / CHUNK * RECORD_SECONDS)), 44100)
-        signal = spf.readframes(-1)
-        signal = np.fromstring(signal, 'Int16')
-        fs = spf.getframerate()
-        TimeValues = np.linspace(0, len(signal) / fs, num=len(signal))
-        create_specto(signal, fs)
-        #Pxx, freqs, bins, im = plt.specgram(signal, NFFT=NFFT, Fs=fs, noverlap=100, cmap=plt.cm.gist_heat)
-        #plt.show()

@@ -1,12 +1,11 @@
-#This file uses the microphone to listen.
-#requires pyaudio:
-#http://people.csail.mit.edu/hubert/pyaudio/
-#pip install pyaudio
+# This file uses the microphone to listen.
+# requires pyaudio:
+# http://people.csail.mit.edu/hubert/pyaudio/
+# pip install pyaudio
 
 import pyaudio
 import wave
-import numpy as np
-#from specto import create_specto
+import os
 
 #Need to write a temporary file.
 
@@ -14,12 +13,15 @@ import numpy as np
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
-WAVE_OUTPUT_FILENAME = "tmp/output.wav"
-# RATE = 44100
-# RECORD_SECONDS = 10
+WAVE_OUTPUT_DIR = "tmp"
+WAVE_OUTPUT_FILENAME = "output.wav"
+WAVE_OUTPUT_PATH = os.path.join(WAVE_OUTPUT_DIR, WAVE_OUTPUT_FILENAME)
 
 
-def record_file(rate=44100, record_seconds=10, wave_output_filename=WAVE_OUTPUT_FILENAME):
+def record_file(rate=44100, record_seconds=10, wave_output_filename=WAVE_OUTPUT_PATH):
+    if not os.path.exists(WAVE_OUTPUT_DIR):
+        os.makedirs(WAVE_OUTPUT_DIR)
+
     p = pyaudio.PyAudio()
 
     stream = p.open(format=FORMAT,

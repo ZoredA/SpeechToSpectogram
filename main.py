@@ -9,11 +9,13 @@
 
 import tkinter as tk
 import tkinter.font as tk_font
+from tkinter import messagebox as mbox
 import listener
 import wave
 import numpy as np
 import specto
 import asr
+import os
 
 # Reference for icon usage:
 # http://stackoverflow.com/q/4297949
@@ -104,13 +106,24 @@ class SpectoApp(tk.Frame):
         row_num = self.input_rows_generator(0, self.listener_input_dict, self.listener_input_list, self.listener_input_rows)
         row_num = self.input_rows_generator(row_num, self.specto_input_dict, self.specto_input_list, self.specto_input_rows)
 
+        self.freq_grid_bool = tk.IntVar()
+        row_num += 1
+        freq_grid_button = tk.Checkbutton(master=self, text="Create freq grid", variable=self.freq_grid_bool, anchor=tk.W,
+                                    font=self.check_font)
+        freq_grid_button.grid(row=row_num, column=1, in_=self)
 
-        self.USE_ASR = False
+
+        self.time_grid_bool = tk.IntVar()
+        row_num += 1
+        time_grid_button = tk.Checkbutton(master=self, text="Create time grid", variable=self.time_grid_bool, anchor=tk.W,
+                                          font=self.check_font)
+        time_grid_button.grid(row=row_num, column=1, in_=self)
+
         self.asr_bool = tk.IntVar()
         row_num += 1
-        asr_button = tk.Checkbutton(master=self, text="Use ASR", variable=self.asr_bool, anchor=tk.W, font=self.check_font)
+        asr_button = tk.Checkbutton(master=self, text="Use ASR", variable=self.asr_bool, anchor=tk.W,
+                                    font=self.check_font)
         asr_button.grid(row=row_num, column=1, in_=self)
-
 
         self.create_widgets(row_num+1)
 
@@ -159,12 +172,12 @@ class SpectoApp(tk.Frame):
         return row_num
 
     def create_dropdown(self, dropdown_info):
-        #Reference: http://effbot.org/tkinterbook/optionmenu.htm
+        # Reference: http://effbot.org/tkinterbook/optionmenu.htm
         option = tk.OptionMenu(self, dropdown_info['variable'], *dropdown_info['options'])
         return option
 
-    #Helper function that just returns a dictionary
-    #mapping each argument to its casted value.
+    # Helper function that just returns a dictionary
+    # mapping each argument to its casted value.
     def get_value_dict(self, rows_dict, info_dict):
         return_dict = {}
         for arg in rows_dict:
@@ -184,23 +197,32 @@ class SpectoApp(tk.Frame):
         #
 
     def generate(self):
+        if not os.path.exists(listener.WAVE_OUTPUT_PATH):
+            mbox.showwarning(
+                "File not found.",
+                "No file found in %s. Please record audio before pressing generate." % listener.WAVE_OUTPUT_PATH
+            )
+            return
         spectogram_args = self.get_value_dict(rows_dict=self.specto_input_rows, info_dict=self.specto_input_dict)
         spec = specto.Specto()
-        with wave.open(listener.WAVE_OUTPUT_FILENAME, 'rb') as spf:
+        with wave.open(listener.WAVE_OUTPUT_PATH, 'rb') as spf:
             signal = spf.readframes(-1)
             signal = np.fromstring(signal, 'Int16')
             Fs = spf.getframerate()
             spectogram_args['Fs'] = Fs
             plt = spec.create_specto(signal, spectogram_args)
-        self.text = asr.recognize_file(listener.WAVE_OUTPUT_FILENAME)
-        print(self.text)
+            size = (int)(len(signal)/2)
+            #spec.create_freq(signal[size:], Fs)
+            if self.freq_grid_bool.get():
+                spec.create_freq_grid(signal, Fs)
+            if self.time_grid_bool.get():
+                spec.create_time_grid(signal, Fs)
 
         plt.show()
-        #specto.create_bar_chart(plt, 'Confidence Score', [98.01])
 
         if self.asr_bool.get():
             spec.add_text("Waiting for ASR service (%s)" % ASR_SERVICE)
-            self.text = asr.recognize_file(listener.WAVE_OUTPUT_FILENAME)
+            self.text = asr.recognize_file(listener.WAVE_OUTPUT_PATH)
             print(self.text)
 
             # Sample return:
