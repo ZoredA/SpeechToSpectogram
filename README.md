@@ -11,24 +11,30 @@ Unfortunately, first time installation is a little bit of a hassle.
  
  Be sure to select Python 3.5 64bit installer. During the installation make sure to let it add conda to your path (should be checked by default).
  
--Create an environment:
+Open up a windows command line, and create an environment:
+
 `conda create -n py3k python`
 
 It will ask you if you are okay with installing a few things. Type in y.
 
--Activate the environment:
+Activate the environment:
+
 `activate py3k`
 
--Install numpy
+Install numpy
+
 `conda install numpy`
 
--Install matplotlib
+Install matplotlib
+
 `conda install matplotlib`
 
--Install pyaudio
+Install pyaudio
+
 `pip install pyaudio`
 
--Install Speech Recognition library.
+Install Speech Recognition library.
+
 `pip install SpeechRecognition`
 
 Now simply navigate to whereever you downloaded SpeechToSpectagram (either the Zip from github or a git clone) and type:
