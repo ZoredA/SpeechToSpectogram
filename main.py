@@ -214,7 +214,7 @@ class SpectoApp(tk.Frame):
             size = (int)(len(signal)/2)
             #spec.create_freq(signal[size:], Fs)
             if self.freq_grid_bool.get():
-                spec.create_freq_grid(signal, Fs)
+                spec.create_freq_grid(signal, Fs, maxfreq=spectogram_args['maxfreq'])
             if self.time_grid_bool.get():
                 spec.create_time_grid(signal, Fs)
 

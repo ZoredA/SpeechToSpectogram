@@ -5,7 +5,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
-import math
 
 #Reference: http://stackoverflow.com/a/1303325
 #Reference: http://matplotlib.org/examples/pylab_examples/specgram_demo.html
@@ -75,7 +74,7 @@ class Specto():
         plt.subplots_adjust(left=0.11, bottom=0.07, right=0.9, top=0.95, wspace=0.20, hspace=0.69)
         return plt
 
-    def create_freq_grid(self, signal, fs):
+    def create_freq_grid(self, signal, fs, maxfreq=4000.0):
         max_time = len(signal)/fs
         fig = plt.figure("freq_grid", figsize=(12, 12))
         # We take our original time signal and split it into chunks
@@ -87,7 +86,7 @@ class Specto():
         cur_column = 0
         current_time = 0.0
         for index, data in enumerate(chunked):
-            freq, y = self.get_freq_amp(data, fs)
+            freq, y = self.get_freq_amp(data, fs, maxfreq)
             ax1 = plt.subplot2grid((3, 3), (cur_row, cur_column))
             ax1.plot(freq, y, 'r')  # plotting the spectrum
             if index < NUMBER_OF_GRID_PLOTS-1:
@@ -106,7 +105,7 @@ class Specto():
 
     # Some inspiration from http://glowingpython.blogspot.ca/2011/08/how-to-plot-frequency-spectrum-with.html
     # and http://stackoverflow.com/questions/15382076/plotting-power-spectrum-in-python
-    def get_freq_amp(self, signal, fs):
+    def get_freq_amp(self, signal, fs, maxfreq=4000.0):
         """Returns the fourier transform of the signal along with the frequencies
             Returns tuple :(freq, 10log fft)
                 -freq: list of frequencies (x-axis)
@@ -121,7 +120,7 @@ class Specto():
         idx = np.argsort(freq)
 
         zero = np.float64(0)
-        max_freq = np.float64(4000.0)
+        max_freq = np.float64(maxfreq)
         for index in idx:
             if 0 <= freq[index] <= max_freq:
                 cut_list.append(index)
@@ -132,8 +131,6 @@ class Specto():
         max_time = len(signal) / fs
         total_time = np.linspace(0, len(signal) / fs, num=len(signal))
         fig = plt.figure("time_grid", figsize=(12, 12))
-        size_of_each_plot = math.ceil((len(signal) / fs) / NUMBER_OF_GRID_PLOTS)
-        #chunked = chunks(signal, size_of_each_plot)
         chunked = np.array_split(signal, NUMBER_OF_GRID_PLOTS)
         chunked_t = np.array_split(total_time, NUMBER_OF_GRID_PLOTS)
 
