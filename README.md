@@ -67,6 +67,8 @@ This window lets you tune the basic parameters of the spectogram as well as deci
 
 After the button returns to normal, you can press the Generate button to create plots. These plots are made from a wav file called output.wav in the tmp directory. 
 
+Note: Reference for the spectogram colormaps can be found [here](http://matplotlib.org/examples/color/colormaps_reference.html). At this point in time, revese color maps are not supported.
+
 If you check the Use ASR button, the program will pass the audio recording to a speech recognition service (currently only supports Google) and display the result below the spectogram. Note that this is a slightly time consuming network call, so the program will hang for a few seconds while it completes. 
 
 ![specto window](http://imgur.com/gCCpIFA.jpg)
