@@ -252,5 +252,5 @@ def compose_ASR_string(raw_input):
 
 if __name__ == "__main__":
     app = SpectoApp()
-    app.master.title("Voice to Spectogram")
+    app.master.title("Speech to Spectogram")
     app.mainloop()
